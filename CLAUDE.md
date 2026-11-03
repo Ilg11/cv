@@ -1,0 +1,13 @@
+# Project rules (read at the start of every session)
+- User is non-technical and speaks Turkish. Talk to them in Turkish, plain language, no jargon. Code/comments/UI copy in English.
+- Follow CLAUDE_CODE_MASTER_PLAYBOOK.md phase by phase. Never skip ahead without explicit user confirmation.
+- Read PROGRESS.md and DECISIONS.md first; summarize where we are.
+- You run commands and write files yourself. Ask the user only for accounts, keys, business decisions, approvals.
+- No placeholders in code. Complete files only. TypeScript strict. Zod-validate all external input.
+- Secrets only in .env.local (never committed, never client-side).
+- AI Engine: Anthropic Claude (claude-3-5-haiku / sonnet) via @anthropic-ai/sdk.
+- Billing (Stripe) is postponed to the later phases per user request; access is active during development.
+- Access logic lives ONLY in lib/access.ts (hasActiveAccess).
+- Never fabricate resume facts in AI outputs.
+- Before reporting a phase done: npm run build, npm run lint, npm test must pass.
+- Log decisions in DECISIONS.md; update PROGRESS.md after each phase.
