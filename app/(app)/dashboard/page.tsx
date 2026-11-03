@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Sparkles,
   FileText,
@@ -10,9 +11,18 @@ import {
   Share2,
   Eye,
   CreditCard,
+  Target,
+  Wrench,
+  TrendingUp,
 } from "lucide-react";
-import { CreateResumeDialog } from "@/components/resume/create-dialog";
-import { ResumeCard } from "@/components/resume/resume-card";
+import { QuickActions } from "@/components/dashboard/quick-actions";
+import { QuickJobScanner } from "@/components/dashboard/quick-job-scanner";
+import { ResumesTab } from "@/components/dashboard/resumes-tab";
+import { JobAnalysesList } from "@/components/dashboard/job-analyses-list";
+import { RecruiterLinksList } from "@/components/dashboard/recruiter-links-list";
+import { ToolsTab } from "@/components/dashboard/tools-tab";
+
+export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -25,32 +35,48 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
-  // Fetch resumes
+  // 1. Fetch user's resumes
   const { data: resumes } = await supabase
     .from("resumes")
-    .select("*, shared_links(id, slug, is_active, view_count)")
+    .select("*, shared_links(id, slug, is_active, view_count, company_name)")
     .eq("user_id", user.id)
     .order("updated_at", { ascending: false });
 
-  // Calculate stats
-  const totalResumes = resumes?.length || 0;
-  let totalActiveLinks = 0;
-  let totalViews = 0;
+  // 2. Fetch user's job analyses
+  const { data: analyses } = await supabase
+    .from("job_analyses")
+    .select("*, resumes(title)")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false });
 
-  resumes?.forEach((r) => {
-    const links = r.shared_links || [];
-    totalActiveLinks += links.filter((l: any) => l.is_active).length;
-    totalViews += links.reduce((sum: number, l: any) => sum + (l.view_count || 0), 0);
-  });
+  // 3. Fetch user's shared links
+  const { data: sharedLinks } = await supabase
+    .from("shared_links")
+    .select("*, resumes(title)")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false });
+
+  // 4. Calculate key metrics
+  const totalResumes = resumes?.length || 0;
+  const totalActiveLinks = sharedLinks?.filter((l: any) => l.is_active).length || 0;
+  const totalViews = sharedLinks?.reduce((sum: number, l: any) => sum + (l.view_count || 0), 0) || 0;
+
+  let avgAtsScore = 0;
+  if (analyses && analyses.length > 0) {
+    const scores = analyses.filter((a) => typeof a.ats_score === "number").map((a) => a.ats_score);
+    if (scores.length > 0) {
+      avgAtsScore = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
+    }
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-indigo-500 selection:text-white">
-      {/* Background Grid Pattern */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b15_1px,transparent_1px),linear-gradient(to_bottom,#1e293b15_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none" />
+      {/* Background Subtle Radial Fade Grid */}
+      <div className="fixed inset-0 bg-[linear-gradient(to_right,#1e293b12_1px,transparent_1px),linear-gradient(to_bottom,#1e293b12_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none" />
 
-      {/* Top Navbar */}
+      {/* Top Navigation */}
       <header className="sticky top-0 z-40 border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-xl">
-        <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-8">
+        <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-8 max-w-6xl">
           <Link href="/dashboard" className="flex items-center gap-2.5 font-bold text-xl text-white">
             <div className="h-8 w-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white shadow-md shadow-indigo-600/30">
               <Sparkles className="h-4 w-4" />
@@ -60,27 +86,36 @@ export default async function DashboardPage() {
 
           <div className="flex items-center gap-3">
             <Link href="/billing">
-              <Button variant="ghost" size="sm" className="gap-1.5 text-xs text-slate-300 hover:text-white hover:bg-slate-800/60">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="gap-1.5 text-xs text-slate-300 hover:text-white hover:bg-slate-800/60"
+              >
                 <CreditCard className="h-3.5 w-3.5 text-indigo-400" />
-                <span className="hidden sm:inline">Billing & Pass</span>
+                <span className="hidden sm:inline">Fatura ve Geçiş</span>
               </Button>
             </Link>
-            <span className="text-xs text-slate-500 hidden md:inline-block">
+            <span className="text-xs text-slate-500 hidden md:inline-block font-mono">
               {user.email}
             </span>
             <form action="/api/auth/signout" method="post">
-              <Button variant="ghost" size="sm" type="submit" className="gap-1.5 text-xs text-slate-400 hover:text-white hover:bg-slate-800/60">
+              <Button
+                variant="ghost"
+                size="sm"
+                type="submit"
+                className="gap-1.5 text-xs text-slate-400 hover:text-white hover:bg-slate-800/60"
+              >
                 <LogOut className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Sign Out</span>
+                <span className="hidden sm:inline">Oturumu Kapat</span>
               </Button>
             </form>
           </div>
         </div>
       </header>
 
-      {/* Main Container */}
+      {/* Main Workspace */}
       <main className="relative container mx-auto flex-1 px-4 py-8 sm:px-8 max-w-6xl">
-        {/* Trial Status Glass Banner */}
+        {/* Trial Status Banner */}
         <div className="mb-8 rounded-2xl border border-indigo-500/30 bg-gradient-to-r from-indigo-950/60 via-slate-900/60 to-slate-950 p-5 sm:p-6 backdrop-blur-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xl shadow-indigo-950/20">
           <div className="flex items-center gap-3.5">
             <div className="h-11 w-11 rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 font-bold shrink-0">
@@ -88,28 +123,28 @@ export default async function DashboardPage() {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="font-semibold text-white text-base">7-Day Free Trial Active</h3>
+                <h3 className="font-semibold text-white text-base">7 Günlük Ücretsiz Deneme Sürümü Aktif</h3>
                 <Badge variant="success" className="bg-emerald-950/80 text-emerald-400 border-emerald-800 text-[10px]">
-                  PRO PLAN
+                  PROFESYONEL PLAN
                 </Badge>
               </div>
               <p className="text-xs text-slate-400 mt-1">
-                You have unrestricted access to unlimited ATS job optimizations, LinkedIn profile syncing, and live recruiter sharing.
+                Sınırsız ATS iş optimizasyonuna, LinkedIn profil senkronizasyonuna ve canlı işe alım uzmanı paylaşımına sınırsız erişiminiz var.
               </p>
             </div>
           </div>
           <Link href="/billing">
-            <Button size="sm" variant="outline" className="border-indigo-500/30 text-indigo-300 hover:bg-indigo-950/50 text-xs">
-              Manage Membership
+            <Button size="sm" variant="outline" className="border-indigo-500/30 text-indigo-300 hover:bg-indigo-950/50 text-xs shrink-0">
+              Üyeliği Yönet
             </Button>
           </Link>
         </div>
 
         {/* 21st.dev Metric Cards Bar */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4 backdrop-blur-sm">
             <div className="flex items-center justify-between text-slate-400 text-xs font-medium mb-1">
-              <span>Total Resumes</span>
+              <span>Toplam Özgeçmişler</span>
               <FileText className="h-4 w-4 text-indigo-400" />
             </div>
             <div className="text-2xl font-bold text-white">{totalResumes}</div>
@@ -117,7 +152,7 @@ export default async function DashboardPage() {
 
           <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4 backdrop-blur-sm">
             <div className="flex items-center justify-between text-slate-400 text-xs font-medium mb-1">
-              <span>Active Recruiter Links</span>
+              <span>Aktif İşe Alımcı Bağlantıları</span>
               <Share2 className="h-4 w-4 text-violet-400" />
             </div>
             <div className="text-2xl font-bold text-white">{totalActiveLinks}</div>
@@ -125,43 +160,99 @@ export default async function DashboardPage() {
 
           <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4 backdrop-blur-sm">
             <div className="flex items-center justify-between text-slate-400 text-xs font-medium mb-1">
-              <span>Total Recruiter Views</span>
+              <span>Toplam İşe Alımcı Görüntülemeleri</span>
               <Eye className="h-4 w-4 text-emerald-400" />
             </div>
             <div className="text-2xl font-bold text-emerald-400">{totalViews}</div>
           </div>
-        </div>
 
-        {/* Header with Actions */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight text-white">Your Resumes</h1>
-            <p className="text-xs text-slate-400">
-              Manage, edit, optimize, duplicate, and share your personalized resumes
-            </p>
-          </div>
-          <CreateResumeDialog />
-        </div>
-
-        {/* Resumes Grid */}
-        {resumes && resumes.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {resumes.map((resume) => (
-              <ResumeCard key={resume.id} resume={resume} />
-            ))}
-          </div>
-        ) : (
-          <div className="rounded-3xl border border-dashed border-slate-800 bg-slate-900/30 p-12 text-center backdrop-blur-sm">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 mb-4">
-              <FileText className="h-7 w-7" />
+          <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4 backdrop-blur-sm">
+            <div className="flex items-center justify-between text-slate-400 text-xs font-medium mb-1">
+              <span>Ortalama ATS Skoru</span>
+              <Target className="h-4 w-4 text-amber-400" />
             </div>
-            <h3 className="text-lg font-bold text-white">No resumes created yet</h3>
-            <p className="text-xs text-slate-400 max-w-sm mx-auto mt-1 mb-6">
-              Create your first resume by importing your LinkedIn profile, uploading an existing PDF, or starting from our proven ATS templates.
-            </p>
-            <CreateResumeDialog buttonText="Create Your First Resume" />
+            <div className="text-2xl font-bold text-amber-400">
+              {avgAtsScore > 0 ? `%${avgAtsScore}` : "—"}
+            </div>
           </div>
-        )}
+        </div>
+
+        {/* Quick Action Bento Grid (Demo / LinkedIn / PDF / Scratch) */}
+        <QuickActions hasResumes={totalResumes > 0} />
+
+        {/* Quick ATS Job Scanner Widget */}
+        <QuickJobScanner resumes={resumes || []} />
+
+        {/* Candidate Command Center Tabs */}
+        <div className="mt-8">
+          <Tabs defaultValue="resumes" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 bg-slate-900 border border-slate-800 p-1 rounded-xl mb-6">
+              <TabsTrigger
+                value="resumes"
+                className="gap-2 text-xs py-2 data-[state=active]:bg-indigo-600 data-[state=active]:text-white transition-all"
+              >
+                <FileText className="h-3.5 w-3.5" />
+                <span>Özgeçmişlerim</span>
+                <span className="ml-1 text-[10px] px-1.5 py-0.2 rounded-full bg-slate-800 data-[state=active]:bg-indigo-700">
+                  {totalResumes}
+                </span>
+              </TabsTrigger>
+
+              <TabsTrigger
+                value="analyses"
+                className="gap-2 text-xs py-2 data-[state=active]:bg-indigo-600 data-[state=active]:text-white transition-all"
+              >
+                <Target className="h-3.5 w-3.5 text-amber-400" />
+                <span>ATS Analizlerim</span>
+                <span className="ml-1 text-[10px] px-1.5 py-0.2 rounded-full bg-slate-800 data-[state=active]:bg-indigo-700">
+                  {analyses?.length || 0}
+                </span>
+              </TabsTrigger>
+
+              <TabsTrigger
+                value="links"
+                className="gap-2 text-xs py-2 data-[state=active]:bg-indigo-600 data-[state=active]:text-white transition-all"
+              >
+                <Share2 className="h-3.5 w-3.5 text-violet-400" />
+                <span>İşe Alımcı Linkleri</span>
+                <span className="ml-1 text-[10px] px-1.5 py-0.2 rounded-full bg-slate-800 data-[state=active]:bg-indigo-700">
+                  {sharedLinks?.length || 0}
+                </span>
+              </TabsTrigger>
+
+              <TabsTrigger
+                value="tools"
+                className="gap-2 text-xs py-2 data-[state=active]:bg-indigo-600 data-[state=active]:text-white transition-all"
+              >
+                <Wrench className="h-3.5 w-3.5 text-emerald-400" />
+                <span>Veri Yedekleme & Araçlar</span>
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Tab 1: Resumes */}
+            <TabsContent value="resumes" className="focus:outline-none">
+              <ResumesTab resumes={resumes || []} />
+            </TabsContent>
+
+            {/* Tab 2: Job Analyses */}
+            <TabsContent value="analyses" className="focus:outline-none">
+              <JobAnalysesList analyses={analyses || []} />
+            </TabsContent>
+
+            {/* Tab 3: Recruiter Links */}
+            <TabsContent value="links" className="focus:outline-none">
+              <RecruiterLinksList
+                links={sharedLinks || []}
+                resumes={resumes || []}
+              />
+            </TabsContent>
+
+            {/* Tab 4: Tools & Export */}
+            <TabsContent value="tools" className="focus:outline-none">
+              <ToolsTab userEmail={user.email || ""} />
+            </TabsContent>
+          </Tabs>
+        </div>
       </main>
     </div>
   );
