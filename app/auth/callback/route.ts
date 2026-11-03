@@ -6,6 +6,13 @@ export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
   const next = searchParams.get("next") ?? "/dashboard";
+  const error = searchParams.get("error");
+  const errorDescription = searchParams.get("error_description");
+
+  if (error || errorDescription) {
+    const message = encodeURIComponent(errorDescription || "Authentication link expired or invalid.");
+    return NextResponse.redirect(`${origin}/login?error=${message}`);
+  }
 
   if (code) {
     const cookieStore = cookies();
@@ -30,12 +37,11 @@ export async function GET(request: Request) {
       }
     );
 
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (!error) {
+    const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+    if (!exchangeError) {
       return NextResponse.redirect(`${origin}${next}`);
     }
   }
 
-  // Return the user to an error page with instructions
   return NextResponse.redirect(`${origin}/login?error=auth-callback-failed`);
 }
