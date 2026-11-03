@@ -27,26 +27,31 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
-        },
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
       });
 
-      if (error) {
-        toast.error(error.message);
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || "Failed to create account");
         return;
       }
 
-      if (data.session) {
-        toast.success("Account created successfully!");
+      // Automatically sign in immediately!
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (signInError) {
+        toast.success("Account ready! Please sign in.");
+        router.push("/login");
+      } else {
+        toast.success("Account created! Redirecting to dashboard...");
         router.push("/dashboard");
         router.refresh();
-      } else {
-        toast.success("Check your email to confirm your account!");
-        router.push("/login");
       }
     } catch {
       toast.error("An unexpected error occurred. Please try again.");
