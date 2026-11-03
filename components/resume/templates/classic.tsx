@@ -61,6 +61,26 @@ export function ClassicTemplate({ content }: { content: ResumeContent }) {
         </section>
       )}
 
+      {/* Projects */}
+      {projects && projects.length > 0 && (
+        <section className="mb-5">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-slate-900 border-b border-slate-200 pb-1 mb-3 font-sans">
+            Projects
+          </h2>
+          <div className="space-y-2.5">
+            {projects.map((proj) => (
+              <div key={proj.id} className="font-sans text-xs">
+                <div className="flex justify-between items-baseline">
+                  <span className="font-bold text-slate-900">{proj.name}</span>
+                  {proj.url && <span className="text-primary text-[11px]">{proj.url}</span>}
+                </div>
+                {proj.description && <p className="text-slate-600 mt-0.5">{proj.description}</p>}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* Education */}
       {education && education.length > 0 && (
         <section className="mb-5">

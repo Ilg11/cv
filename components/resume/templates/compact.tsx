@@ -57,6 +57,25 @@ export function CompactTemplate({ content }: { content: ResumeContent }) {
         </section>
       )}
 
+      {/* Projects */}
+      {projects && projects.length > 0 && (
+        <section className="mb-3">
+          <h2 className="text-[11px] font-bold uppercase tracking-wider text-slate-900 border-b border-slate-300 pb-0.5 mb-1">
+            Projects
+          </h2>
+          <div className="space-y-1 text-xs">
+            {projects.map((proj) => (
+              <div key={proj.id} className="flex justify-between items-baseline">
+                <div>
+                  <span className="font-bold text-slate-900">{proj.name}</span>
+                  {proj.description && <span className="text-slate-600 text-[11px]"> — {proj.description}</span>}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* Education */}
       {education && education.length > 0 && (
         <section className="mb-3">
