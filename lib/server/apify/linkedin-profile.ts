@@ -55,9 +55,10 @@ export async function scrapeAndNormalizeLinkedIn(linkedinUrl: string): Promise<R
   }
 
   // Use Claude to normalize raw scraped data to ResumeContent schema
-  const claude = getClaudeClient();
-
-  const prompt = `You are a resume data normalization assistant.
+  let textContent = "";
+  try {
+    const claude = getClaudeClient();
+    const prompt = `You are a resume data normalization assistant.
 Convert this raw LinkedIn profile data into strict JSON matching the target resume schema.
 Extract all work history, education, skills, and summary.
 Follow the Google XYZ formula for bullet points: "Accomplished [X] as measured by [Y] by doing [Z]".
@@ -79,16 +80,19 @@ ${JSON.stringify(rawData || { url: linkedinUrl }).slice(0, 15000)}
 
 Return ONLY valid JSON without markdown formatting or conversational commentary.`;
 
-  const response = await claude.messages.create({
-    model: "claude-3-5-haiku-20241022",
-    max_tokens: 4000,
-    messages: [{ role: "user", content: prompt }],
-  });
+    const response = await claude.messages.create({
+      model: "claude-3-5-haiku-20241022",
+      max_tokens: 4000,
+      messages: [{ role: "user", content: prompt }],
+    });
 
-  const textContent = response.content
-    .filter((c) => c.type === "text")
-    .map((c) => (c as any).text)
-    .join("");
+    textContent = response.content
+      .filter((c) => c.type === "text")
+      .map((c) => (c as any).text)
+      .join("");
+  } catch (claudeErr: any) {
+    console.warn("Claude normalization unavailable, using basic extraction:", claudeErr.message);
+  }
 
   try {
     const cleaned = textContent.replace(/```json/g, "").replace(/```/g, "").trim();
