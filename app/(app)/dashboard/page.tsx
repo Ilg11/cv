@@ -14,6 +14,8 @@ import {
   Target,
   Wrench,
   TrendingUp,
+  Compass,
+  Users,
 } from "lucide-react";
 import { QuickActions } from "@/components/dashboard/quick-actions";
 import { QuickJobScanner } from "@/components/dashboard/quick-job-scanner";
@@ -21,6 +23,8 @@ import { ResumesTab } from "@/components/dashboard/resumes-tab";
 import { JobAnalysesList } from "@/components/dashboard/job-analyses-list";
 import { RecruiterLinksList } from "@/components/dashboard/recruiter-links-list";
 import { ToolsTab } from "@/components/dashboard/tools-tab";
+import { LinkedInJobsRadar } from "@/components/dashboard/linkedin-jobs-radar";
+import { LinkedInBenchmarkView } from "@/components/dashboard/linkedin-benchmark-modal";
 
 export const dynamic = "force-dynamic";
 
@@ -129,7 +133,7 @@ export default async function DashboardPage() {
                 </Badge>
               </div>
               <p className="text-xs text-slate-400 mt-1">
-                Sınırsız ATS iş optimizasyonuna, LinkedIn profil senkronizasyonuna ve canlı işe alım uzmanı paylaşımına sınırsız erişiminiz var.
+                Sınırsız ATS iş optimizasyonuna, LinkedIn profil senkronizasyonuna (Apify) ve canlı işe alım uzmanı paylaşımına sınırsız erişiminiz var.
               </p>
             </div>
           </div>
@@ -177,55 +181,71 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        {/* Quick Action Bento Grid (Demo / LinkedIn / PDF / Scratch) */}
+        {/* Quick Action Bento Grid (AI Builder / LinkedIn Apify / PDF / Demo) */}
         <QuickActions hasResumes={totalResumes > 0} />
 
         {/* Quick ATS Job Scanner Widget */}
         <QuickJobScanner resumes={resumes || []} />
 
-        {/* Candidate Command Center Tabs */}
+        {/* Candidate Command Center Multi-Tabs */}
         <div className="mt-8">
           <Tabs defaultValue="resumes" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 bg-slate-900 border border-slate-800 p-1 rounded-xl mb-6">
+            <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6 bg-slate-900 border border-slate-800 p-1 rounded-xl mb-6">
               <TabsTrigger
                 value="resumes"
-                className="gap-2 text-xs py-2 data-[state=active]:bg-indigo-600 data-[state=active]:text-white transition-all"
+                className="gap-1.5 text-xs py-2 data-[state=active]:bg-indigo-600 data-[state=active]:text-white transition-all"
               >
                 <FileText className="h-3.5 w-3.5" />
-                <span>Özgeçmişlerim</span>
-                <span className="ml-1 text-[10px] px-1.5 py-0.2 rounded-full bg-slate-800 data-[state=active]:bg-indigo-700">
+                <span className="truncate">CV&apos;lerim</span>
+                <span className="ml-0.5 text-[10px] px-1.5 py-0.2 rounded-full bg-slate-800 data-[state=active]:bg-indigo-700">
                   {totalResumes}
                 </span>
               </TabsTrigger>
 
               <TabsTrigger
+                value="jobs-radar"
+                className="gap-1.5 text-xs py-2 data-[state=active]:bg-indigo-600 data-[state=active]:text-white transition-all"
+              >
+                <Compass className="h-3.5 w-3.5 text-indigo-400" />
+                <span className="truncate">İlan Radarı</span>
+              </TabsTrigger>
+
+              <TabsTrigger
+                value="benchmark"
+                className="gap-1.5 text-xs py-2 data-[state=active]:bg-indigo-600 data-[state=active]:text-white transition-all"
+              >
+                <Users className="h-3.5 w-3.5 text-blue-400" />
+                <span className="truncate">Profil Kıyasla</span>
+              </TabsTrigger>
+
+              <TabsTrigger
                 value="analyses"
-                className="gap-2 text-xs py-2 data-[state=active]:bg-indigo-600 data-[state=active]:text-white transition-all"
+                className="gap-1.5 text-xs py-2 data-[state=active]:bg-indigo-600 data-[state=active]:text-white transition-all"
               >
                 <Target className="h-3.5 w-3.5 text-amber-400" />
-                <span>ATS Analizlerim</span>
-                <span className="ml-1 text-[10px] px-1.5 py-0.2 rounded-full bg-slate-800 data-[state=active]:bg-indigo-700">
+                <span className="truncate">ATS Analiz</span>
+                <span className="ml-0.5 text-[10px] px-1.5 py-0.2 rounded-full bg-slate-800 data-[state=active]:bg-indigo-700">
                   {analyses?.length || 0}
                 </span>
               </TabsTrigger>
 
               <TabsTrigger
                 value="links"
-                className="gap-2 text-xs py-2 data-[state=active]:bg-indigo-600 data-[state=active]:text-white transition-all"
+                className="gap-1.5 text-xs py-2 data-[state=active]:bg-indigo-600 data-[state=active]:text-white transition-all"
               >
                 <Share2 className="h-3.5 w-3.5 text-violet-400" />
-                <span>İşe Alımcı Linkleri</span>
-                <span className="ml-1 text-[10px] px-1.5 py-0.2 rounded-full bg-slate-800 data-[state=active]:bg-indigo-700">
+                <span className="truncate">İşe Alımcı</span>
+                <span className="ml-0.5 text-[10px] px-1.5 py-0.2 rounded-full bg-slate-800 data-[state=active]:bg-indigo-700">
                   {sharedLinks?.length || 0}
                 </span>
               </TabsTrigger>
 
               <TabsTrigger
                 value="tools"
-                className="gap-2 text-xs py-2 data-[state=active]:bg-indigo-600 data-[state=active]:text-white transition-all"
+                className="gap-1.5 text-xs py-2 data-[state=active]:bg-indigo-600 data-[state=active]:text-white transition-all"
               >
                 <Wrench className="h-3.5 w-3.5 text-emerald-400" />
-                <span>Veri Yedekleme & Araçlar</span>
+                <span className="truncate">Araçlar</span>
               </TabsTrigger>
             </TabsList>
 
@@ -234,12 +254,22 @@ export default async function DashboardPage() {
               <ResumesTab resumes={resumes || []} />
             </TabsContent>
 
-            {/* Tab 2: Job Analyses */}
+            {/* Tab 2: LinkedIn Jobs Radar (curious_coder scraper) */}
+            <TabsContent value="jobs-radar" className="focus:outline-none">
+              <LinkedInJobsRadar resumes={resumes || []} />
+            </TabsContent>
+
+            {/* Tab 3: LinkedIn Profile Benchmark (dev_fusion scraper) */}
+            <TabsContent value="benchmark" className="focus:outline-none">
+              <LinkedInBenchmarkView />
+            </TabsContent>
+
+            {/* Tab 4: Job Analyses */}
             <TabsContent value="analyses" className="focus:outline-none">
               <JobAnalysesList analyses={analyses || []} />
             </TabsContent>
 
-            {/* Tab 3: Recruiter Links */}
+            {/* Tab 5: Recruiter Links */}
             <TabsContent value="links" className="focus:outline-none">
               <RecruiterLinksList
                 links={sharedLinks || []}
@@ -247,7 +277,7 @@ export default async function DashboardPage() {
               />
             </TabsContent>
 
-            {/* Tab 4: Tools & Export */}
+            {/* Tab 6: Tools & Export */}
             <TabsContent value="tools" className="focus:outline-none">
               <ToolsTab userEmail={user.email || ""} />
             </TabsContent>

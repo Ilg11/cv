@@ -16,8 +16,12 @@ import {
   Zap,
   CheckCircle2,
   ArrowRight,
+  Wand2,
+  ExternalLink,
+  ShieldAlert,
 } from "lucide-react";
 import { toast } from "sonner";
+import { GuidedBuilderDialog } from "@/components/dashboard/guided-builder-dialog";
 
 export function QuickActions({
   hasResumes,
@@ -33,6 +37,7 @@ export function QuickActions({
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [title, setTitle] = useState("Kıdemli Yazılım Mühendisi");
   const [template, setTemplate] = useState<"classic" | "modern" | "compact">("modern");
+  const [permissionUrl, setPermissionUrl] = useState<string | null>(null);
 
   // 1-Click Demo Resume
   const handleLoadDemo = async () => {
@@ -52,14 +57,15 @@ export function QuickActions({
     }
   };
 
-  // LinkedIn Import
+  // LinkedIn Import via Apify dev_fusion/linkedin-profile-scraper
   const handleLinkedInImport = async () => {
     if (!linkedinUrl.includes("linkedin.com/in/")) {
       toast.error("Lütfen geçerli bir LinkedIn profil bağlantısı girin (örn: https://linkedin.com/in/ad-soyad)");
       return;
     }
     setLoading(true);
-    toast.info("Apify LinkedIn profilinizi tarıyor (~20 saniye sürebilir)...");
+    setPermissionUrl(null);
+    toast.info("Apify (dev_fusion/linkedin-profile-scraper) profilinizi tarıyor (~20 saniye)...");
     try {
       const res = await fetch("/api/import/linkedin", {
         method: "POST",
@@ -67,7 +73,12 @@ export function QuickActions({
         body: JSON.stringify({ linkedinUrl, title: "LinkedIn Senkronize CV" }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "LinkedIn aktarımı başarısız oldu");
+      if (!res.ok) {
+        if (data.error && data.error.includes("approvePermissions")) {
+          setPermissionUrl("https://console.apify.com/actors/2SyF0bVxmgGr8IVCZ?approvePermissions=true");
+        }
+        throw new Error(data.error || "LinkedIn aktarımı başarısız oldu");
+      }
       toast.success("LinkedIn profiliniz başarıyla ATS formatında CV'ye dönüştürüldü!");
       router.push(`/resumes/${data.id}`);
     } catch (err: any) {
@@ -127,61 +138,56 @@ export function QuickActions({
 
   return (
     <div className="space-y-4 mb-8">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h2 className="text-sm font-semibold uppercase tracking-wider text-indigo-400 flex items-center gap-2">
             <Zap className="h-4 w-4" /> Hızlı Eylem Merkezi
           </h2>
           <p className="text-xs text-slate-400">
-            Tek tıkla örnek profil yükleyin, LinkedIn veya PDF ile içe aktarın ya da sıfırdan ATS uyumlu başlayın.
+            Sihirli oluşturucu ile sıfırdan üretin, LinkedIn veya PDF ile içe aktarın ya da tek tıkla örnek profil deneyin.
           </p>
         </div>
-        {activeAction && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setActiveAction(null)}
-            className="text-xs text-slate-400 hover:text-white"
-          >
-            Vazgeç
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          <GuidedBuilderDialog triggerText="✨ Sihirli Hızlı CV Oluşturucu" />
+          {activeAction && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setActiveAction(null)}
+              className="text-xs text-slate-400 hover:text-white"
+            >
+              Kapat
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Bento Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-        {/* Card 1: 1-Click Demo */}
-        <div
-          onClick={handleLoadDemo}
-          className={`cursor-pointer rounded-2xl border transition-all p-4 flex flex-col justify-between group relative overflow-hidden ${
-            loading
-              ? "opacity-60 pointer-events-none"
-              : "border-indigo-500/30 bg-gradient-to-br from-indigo-950/40 via-slate-900/60 to-slate-900/90 hover:border-indigo-400 hover:shadow-lg hover:shadow-indigo-500/10"
-          }`}
-        >
+        {/* Card 1: 1-Click Guided AI Creator */}
+        <div className="rounded-2xl border border-indigo-500/40 bg-gradient-to-br from-indigo-950/50 via-slate-900/80 to-slate-900 p-4 flex flex-col justify-between group relative overflow-hidden shadow-lg shadow-indigo-500/5 hover:border-indigo-400 transition-all">
           <div className="absolute top-2.5 right-2.5">
             <Badge className="bg-indigo-500/20 text-indigo-300 border-indigo-500/30 text-[10px] uppercase font-semibold">
-              1-Tıkla Hazır
+              Yapay Zeka
             </Badge>
           </div>
           <div className="mb-3">
             <div className="h-10 w-10 rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 mb-2.5 group-hover:scale-105 transition-transform">
-              <Sparkles className="h-5 w-5" />
+              <Wand2 className="h-5 w-5" />
             </div>
             <h3 className="font-semibold text-white text-sm group-hover:text-indigo-300 transition-colors">
-              Örnek ATS CV Yükle
+              Sıfırdan Kolay CV Yap
             </h3>
             <p className="text-[11px] text-slate-400 mt-1">
-              Kıdemli Mühendis hazır profili, Stripe ATS analizi ve işe alımcı linkiyle anında deneyin.
+              Pozisyon ve deneyim düzeyini seçin; yapay zeka sektörüne özel ATS uyumlu CV üretsin.
             </p>
           </div>
-          <div className="flex items-center gap-1.5 text-xs text-indigo-400 font-medium pt-2 border-t border-slate-800/80">
-            {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ArrowRight className="h-3.5 w-3.5" />}
-            <span>Anında Yükle</span>
+          <div className="pt-2 border-t border-slate-800/80">
+            <GuidedBuilderDialog triggerText="Hemen Başla" />
           </div>
         </div>
 
-        {/* Card 2: LinkedIn Sync */}
+        {/* Card 2: LinkedIn Sync (Apify) */}
         <div
           onClick={() => setActiveAction(activeAction === "linkedin" ? null : "linkedin")}
           className={`cursor-pointer rounded-2xl border transition-all p-4 flex flex-col justify-between group relative overflow-hidden ${
@@ -243,34 +249,34 @@ export function QuickActions({
           </div>
         </div>
 
-        {/* Card 4: Scratch ATS */}
+        {/* Card 4: 1-Click Demo */}
         <div
-          onClick={() => setActiveAction(activeAction === "scratch" ? null : "scratch")}
+          onClick={handleLoadDemo}
           className={`cursor-pointer rounded-2xl border transition-all p-4 flex flex-col justify-between group relative overflow-hidden ${
-            activeAction === "scratch"
-              ? "border-purple-500 bg-purple-950/40 shadow-lg shadow-purple-500/10"
+            loading
+              ? "opacity-60 pointer-events-none"
               : "border-slate-800 bg-slate-900/60 hover:border-purple-500/50 hover:bg-slate-900/90"
           }`}
         >
           <div className="absolute top-2.5 right-2.5">
-            <Badge variant="outline" className="border-purple-500/30 text-purple-400 text-[10px] uppercase font-semibold">
-              3 Şablon
+            <Badge className="bg-purple-500/20 text-purple-300 border-purple-500/30 text-[10px] uppercase font-semibold">
+              1-Tıkla Hazır
             </Badge>
           </div>
           <div className="mb-3">
             <div className="h-10 w-10 rounded-xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-purple-400 mb-2.5 group-hover:scale-105 transition-transform">
-              <Plus className="h-5 w-5" />
+              <Sparkles className="h-5 w-5" />
             </div>
             <h3 className="font-semibold text-white text-sm group-hover:text-purple-300 transition-colors">
-              Sıfırdan ATS CV
+              Örnek ATS CV Yükle
             </h3>
             <p className="text-[11px] text-slate-400 mt-1">
-              Classic, Modern veya Compact kanıtlanmış şablon yapısıyla doğrudan düzenleyiciyi açın.
+              Kıdemli Mühendis hazır profili, Stripe ATS analizi ve işe alımcı linkiyle anında deneyin.
             </p>
           </div>
           <div className="flex items-center gap-1.5 text-xs text-purple-400 font-medium pt-2 border-t border-slate-800/80">
-            <ArrowRight className="h-3.5 w-3.5" />
-            <span>Şablon Seç</span>
+            {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ArrowRight className="h-3.5 w-3.5" />}
+            <span>Anında Yükle</span>
           </div>
         </div>
       </div>
@@ -280,7 +286,7 @@ export function QuickActions({
         <div className="rounded-2xl border border-blue-500/40 bg-slate-900/90 p-5 backdrop-blur-xl animate-in fade-in-50 duration-200">
           <div className="flex items-center gap-2 mb-3">
             <Linkedin className="h-5 w-5 text-blue-400" />
-            <h4 className="text-sm font-semibold text-white">LinkedIn Profilinden İçe Aktarma (Apify)</h4>
+            <h4 className="text-sm font-semibold text-white">LinkedIn Profilinden İçe Aktarma (Apify dev_fusion)</h4>
           </div>
           <p className="text-xs text-slate-400 mb-4">
             Herkese açık profil bağlantınızı yapıştırın. Deneyimleriniz, eğitiminiz ve yetenekleriniz otomatik ayrıştırılarak ATS standartlarında yeni bir CV oluşturulacaktır.
@@ -302,6 +308,25 @@ export function QuickActions({
               {loading ? "Apify Taranıyor..." : "Profili İçe Aktar"}
             </Button>
           </div>
+
+          {permissionUrl && (
+            <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-950/40 p-3.5 text-xs text-amber-300 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="flex items-start gap-2">
+                <ShieldAlert className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
+                <span>
+                  Apify izin onayı gerekiyor. Lütfen Apify konsolunda tek tıkla onaylayın:
+                </span>
+              </div>
+              <a
+                href={permissionUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold text-xs inline-flex items-center gap-1 shrink-0"
+              >
+                İzni Onayla (1-Tık) <ExternalLink className="h-3 w-3" />
+              </a>
+            </div>
+          )}
         </div>
       )}
 
@@ -331,53 +356,6 @@ export function QuickActions({
               {loading ? "Ayrıştırılıyor..." : "PDF'i Dönüştür"}
             </Button>
           </div>
-        </div>
-      )}
-
-      {activeAction === "scratch" && (
-        <div className="rounded-2xl border border-purple-500/40 bg-slate-900/90 p-5 backdrop-blur-xl animate-in fade-in-50 duration-200">
-          <div className="flex items-center gap-2 mb-3">
-            <FileText className="h-5 w-5 text-purple-400" />
-            <h4 className="text-sm font-semibold text-white">Sıfırdan Yeni ATS Özgeçmişi</h4>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-            <div className="space-y-1.5">
-              <Label className="text-xs text-slate-300">Özgeçmiş Başlığı</Label>
-              <Input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Örn: Kıdemli Yazılım Mühendisi"
-                className="bg-slate-950 border-slate-800 text-white"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs text-slate-300">ATS Şablon Formatı</Label>
-              <div className="grid grid-cols-3 gap-2">
-                {(["classic", "modern", "compact"] as const).map((t) => (
-                  <button
-                    key={t}
-                    type="button"
-                    onClick={() => setTemplate(t)}
-                    className={`py-2 px-3 rounded-lg text-xs font-medium border capitalize transition-all ${
-                      template === t
-                        ? "border-purple-500 bg-purple-950/60 text-white"
-                        : "border-slate-800 bg-slate-950/60 text-slate-400 hover:text-white"
-                    }`}
-                  >
-                    {t}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-          <Button
-            onClick={handleCreateScratch}
-            disabled={loading}
-            className="bg-purple-600 hover:bg-purple-500 text-white gap-2 w-full sm:w-auto"
-          >
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-            Özgeçmişi Oluştur ve Düzenleyiciye Git
-          </Button>
         </div>
       )}
     </div>

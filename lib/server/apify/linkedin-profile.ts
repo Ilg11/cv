@@ -3,6 +3,25 @@ import { ApifyClient } from "apify-client";
 import { getClaudeClient } from "@/lib/server/claude";
 import { ResumeContent, ResumeContentSchema, defaultResumeContent } from "@/lib/resume/schema";
 
+export interface ProfileBenchmarkResult {
+  fullName: string;
+  headline: string;
+  summary: string;
+  skills: string[];
+  experienceHighlights: Array<{
+    company: string;
+    title: string;
+    duration: string;
+    bullets: string[];
+  }>;
+  education: Array<{
+    school: string;
+    degree: string;
+    field: string;
+  }>;
+  rawUrl: string;
+}
+
 export async function scrapeAndNormalizeLinkedIn(linkedinUrl: string): Promise<ResumeContent> {
   const token = process.env.APIFY_API_TOKEN;
   if (!token) {
@@ -11,7 +30,6 @@ export async function scrapeAndNormalizeLinkedIn(linkedinUrl: string): Promise<R
 
   const client = new ApifyClient({ token });
 
-  // Call LinkedIn profile scraper actor
   let rawData: any = null;
   try {
     const run = await client.actor("dev_fusion/linkedin-profile-scraper").call(
@@ -21,20 +39,29 @@ export async function scrapeAndNormalizeLinkedIn(linkedinUrl: string): Promise<R
       { waitSecs: 60 }
     );
 
-    const { items } = await client.dataset(run.defaultDatasetId).listItems();
+    const { items } = await client.dataset(run.defaultDatasetId).listItems({ limit: 1 });
     if (items && items.length > 0) {
       rawData = items[0];
     }
   } catch (actorError: any) {
-    console.warn("Apify actor call encountered an issue:", actorError.message);
+    const msg = actorError.message || "";
+    if (msg.includes("approvePermissions") || msg.includes("requires full access")) {
+      throw new Error(
+        "Apify İzin Onayı Gerekli: dev_fusion/linkedin-profile-scraper actor'ü için Apify hesabınızda izin onayı vermelisiniz. Lütfen şu bağlantıya tıklayarak onaylayın: https://console.apify.com/actors/2SyF0bVxmgGr8IVCZ?approvePermissions=true"
+      );
+    }
+    console.warn("Apify actor call encountered an issue:", msg);
+    throw new Error(`LinkedIn profil tarayıcısı hatası: ${msg}`);
   }
 
-  // If scraper returned raw data, use Claude to normalize it cleanly to our schema
+  // Use Claude to normalize raw scraped data to ResumeContent schema
   const claude = getClaudeClient();
 
   const prompt = `You are a resume data normalization assistant.
-Convert this raw profile data into strict JSON matching the target resume schema.
-If a field is missing, use empty strings or empty arrays. Never invent false details.
+Convert this raw LinkedIn profile data into strict JSON matching the target resume schema.
+Extract all work history, education, skills, and summary.
+Follow the Google XYZ formula for bullet points: "Accomplished [X] as measured by [Y] by doing [Z]".
+Never invent false details.
 
 Target Schema structure:
 {
@@ -48,9 +75,9 @@ Target Schema structure:
 }
 
 Raw profile data:
-${JSON.stringify(rawData || { url: linkedinUrl })}
+${JSON.stringify(rawData || { url: linkedinUrl }).slice(0, 15000)}
 
-Return ONLY the raw JSON object, without markdown formatting or commentary.`;
+Return ONLY valid JSON without markdown formatting or conversational commentary.`;
 
   const response = await claude.messages.create({
     model: "claude-3-5-haiku-20241022",
@@ -74,12 +101,34 @@ Return ONLY the raw JSON object, without markdown formatting or commentary.`;
     console.error("Failed to parse Claude output:", parseErr);
   }
 
-  // Fallback with user's linkedin URL populated
   return {
     ...defaultResumeContent,
     basics: {
       ...defaultResumeContent.basics,
       linkedinUrl,
     },
+  };
+}
+
+export async function benchmarkLinkedInProfile(linkedinUrl: string): Promise<ProfileBenchmarkResult> {
+  const content = await scrapeAndNormalizeLinkedIn(linkedinUrl);
+
+  return {
+    fullName: content.basics.fullName || "LinkedIn Profili",
+    headline: content.basics.headline || "Profesyonel",
+    summary: content.basics.summary || "",
+    skills: content.skills.flatMap((s) => s.items),
+    experienceHighlights: content.experience.map((e) => ({
+      company: e.company,
+      title: e.title,
+      duration: `${e.startDate} - ${e.endDate || "Devam Ediyor"}`,
+      bullets: e.bullets,
+    })),
+    education: content.education.map((ed) => ({
+      school: ed.school,
+      degree: ed.degree,
+      field: ed.field,
+    })),
+    rawUrl: linkedinUrl,
   };
 }
