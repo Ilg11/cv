@@ -52,22 +52,15 @@ const SUGGESTED_SKILLS: Record<string, string[]> = {
 export function GuidedBuilderDialog({ triggerText = "Sihirli Hızlı CV Oluşturucu" }: { triggerText?: string }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [step, setStep] = useState<1 | 2 | 3>(1);
 
   // Form State
   const [role, setRole] = useState("Full Stack Developer");
   const [customRole, setCustomRole] = useState("");
   const [experienceLevel, setExperienceLevel] = useState<"junior" | "mid" | "senior" | "lead">("mid");
-  const [selectedSkills, setSelectedSkills] = useState<string[]>([
-    "React",
-    "TypeScript",
-    "Next.js",
-    "Node.js",
-    "PostgreSQL",
-    "Tailwind CSS",
-  ]);
-  const [customSkillInput, setCustomSkillInput] = useState("");
   const [template, setTemplate] = useState<"classic" | "modern" | "compact">("modern");
+  const [selectedSkills, setSelectedSkills] = useState<string[]>(SUGGESTED_SKILLS["Full Stack Developer"]);
+  const [customSkillInput, setCustomSkillInput] = useState("");
+  const [customNote, setCustomNote] = useState("");
   const [loading, setLoading] = useState(false);
 
   const activeRole = customRole.trim() || role;
@@ -81,21 +74,29 @@ export function GuidedBuilderDialog({ triggerText = "Sihirli Hızlı CV Oluştur
   };
 
   const toggleSkill = (skill: string) => {
-    setSelectedSkills((prev) =>
-      prev.includes(skill) ? prev.filter((s) => s !== skill) : [...prev, skill]
-    );
+    if (selectedSkills.includes(skill)) {
+      setSelectedSkills(selectedSkills.filter((s) => s !== skill));
+    } else {
+      setSelectedSkills([...selectedSkills, skill]);
+    }
   };
 
   const handleAddCustomSkill = () => {
-    if (customSkillInput.trim() && !selectedSkills.includes(customSkillInput.trim())) {
-      setSelectedSkills((prev) => [...prev, customSkillInput.trim()]);
+    const trimmed = customSkillInput.trim();
+    if (trimmed && !selectedSkills.includes(trimmed)) {
+      setSelectedSkills([...selectedSkills, trimmed]);
       setCustomSkillInput("");
     }
   };
 
   const handleGenerate = async () => {
+    if (!activeRole) {
+      toast.error("Lütfen bir rol seçin veya özel pozisyon adı girin.");
+      return;
+    }
+
     setLoading(true);
-    toast.info("Claude 3.5 Haiku seçtiğiniz role özel ATS uyumlu profesyonel CV taslağını üretiyor...");
+    toast.info("Claude 3.5 Haiku sektörünüze özel ATS CV içeriği oluşturuyor...");
 
     try {
       const res = await fetch("/api/ai/generate-starter-resume", {
@@ -104,19 +105,20 @@ export function GuidedBuilderDialog({ triggerText = "Sihirli Hızlı CV Oluştur
         body: JSON.stringify({
           role: activeRole,
           experienceLevel,
-          skills: selectedSkills,
           template,
+          skills: selectedSkills,
+          customNote: customNote.trim() || undefined,
         }),
       });
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Özgeçmiş oluşturulamadı");
 
-      toast.success(`"${data.title}" başarıyla oluşturuldu! Düzenleyici açılıyor...`);
+      toast.success(`"${data.title}" oluşturuldu! Düzenleyici açılıyor...`);
       setOpen(false);
       router.push(`/resumes/${data.id}`);
     } catch (err: any) {
-      toast.error(err.message || "Özgeçmiş üretilirken bir sorun oluştu.");
+      toast.error(err.message || "Bir hata oluştu");
     } finally {
       setLoading(false);
     }
@@ -125,31 +127,35 @@ export function GuidedBuilderDialog({ triggerText = "Sihirli Hızlı CV Oluştur
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="bg-gradient-to-r from-indigo-600 via-indigo-500 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white shadow-lg shadow-indigo-600/30 gap-2 text-xs font-semibold">
-          <Wand2 className="h-4 w-4" />
-          {triggerText}
+        <Button
+          variant="outline"
+          size="sm"
+          className="text-xs h-9 rounded-xl border-slate-200 text-slate-800 hover:bg-slate-50 gap-1.5 shadow-xs"
+        >
+          <Sparkles className="h-3.5 w-3.5 text-indigo-600" />
+          <span>{triggerText}</span>
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="sm:max-w-xl bg-slate-900 border-slate-800 text-slate-100 p-6">
+      <DialogContent className="sm:max-w-xl bg-white border-slate-200 text-slate-900 p-6 rounded-2xl shadow-xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center gap-2 mb-1">
-            <div className="h-8 w-8 rounded-lg bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+            <div className="h-8 w-8 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600">
               <Sparkles className="h-4 w-4" />
             </div>
-            <DialogTitle className="text-white text-lg">Sihirli Hızlı CV Oluşturucu</DialogTitle>
+            <DialogTitle className="text-slate-900 text-lg">Sihirli Hızlı CV Oluşturucu</DialogTitle>
           </div>
-          <DialogDescription className="text-slate-400 text-xs">
+          <DialogDescription className="text-slate-500 text-xs">
             Hedef pozisyonunuzu ve seviyenizi seçin; yapay zeka sektör standartlarında, ölçülebilir XYZ maddeleriyle dolu hazır bir ATS özgeçmişi oluştursun.
           </DialogDescription>
         </DialogHeader>
 
         {/* Multi-step Content */}
-        <div className="py-4 space-y-5">
+        <div className="py-3 space-y-5">
           {/* Step 1: Role Selection */}
-          <div className="space-y-3">
-            <Label className="text-xs font-medium text-slate-300 flex items-center gap-1.5">
-              <Briefcase className="h-3.5 w-3.5 text-indigo-400" /> 1. Hedef Pozisyon & Rol
+          <div className="space-y-2.5">
+            <Label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+              <Briefcase className="h-3.5 w-3.5 text-indigo-600" /> 1. Hedef Pozisyon & Rol
             </Label>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {POPULAR_ROLES.map((r) => (
@@ -159,8 +165,8 @@ export function GuidedBuilderDialog({ triggerText = "Sihirli Hızlı CV Oluştur
                   onClick={() => handleSelectRole(r)}
                   className={`p-2.5 rounded-xl border text-left text-xs font-medium transition-all ${
                     role === r && !customRole
-                      ? "border-indigo-500 bg-indigo-950/60 text-white shadow-sm shadow-indigo-500/20"
-                      : "border-slate-800 bg-slate-950/60 text-slate-400 hover:text-white hover:border-slate-700"
+                      ? "border-slate-900 bg-slate-900 text-white shadow-xs"
+                      : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
                   }`}
                 >
                   {r}
@@ -169,35 +175,35 @@ export function GuidedBuilderDialog({ triggerText = "Sihirli Hızlı CV Oluştur
             </div>
             <div className="pt-1">
               <Input
-                placeholder="Veya farklı bir unvan yazın (örn: Siber Güvenlik Uzmanı, Finans Direktörü)..."
+                placeholder="Veya farklı bir unvan yazın (örn: Siber Güvenlik Uzmanı)..."
                 value={customRole}
                 onChange={(e) => setCustomRole(e.target.value)}
-                className="bg-slate-950 border-slate-800 text-white text-xs h-9"
+                className="bg-white border-slate-200 text-slate-900 text-xs h-9 rounded-xl"
               />
             </div>
           </div>
 
           {/* Step 2: Experience Level & Template */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1 border-t border-slate-800/80">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1 border-t border-slate-100">
             <div className="space-y-2">
-              <Label className="text-xs font-medium text-slate-300 flex items-center gap-1.5">
-                <Layers className="h-3.5 w-3.5 text-emerald-400" /> 2. Deneyim Düzeyi
+              <Label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                <Layers className="h-3.5 w-3.5 text-indigo-600" /> 2. Deneyim Düzeyi
               </Label>
               <div className="grid grid-cols-2 gap-1.5">
                 {[
-                  { id: "junior", label: "Junior (0-2 Yıl)" },
-                  { id: "mid", label: "Mid-Level (2-5 Yıl)" },
-                  { id: "senior", label: "Senior (5+ Yıl)" },
-                  { id: "lead", label: "Lead / Yönetici" },
+                  { id: "junior", label: "Junior (0-2 yıl)" },
+                  { id: "mid", label: "Mid (2-5 yıl)" },
+                  { id: "senior", label: "Senior (5-8 yıl)" },
+                  { id: "lead", label: "Lead / Manager" },
                 ].map((lvl) => (
                   <button
                     key={lvl.id}
                     type="button"
                     onClick={() => setExperienceLevel(lvl.id as any)}
-                    className={`py-2 px-2.5 rounded-lg border text-xs font-medium transition-all text-center ${
+                    className={`py-2 px-2 rounded-xl border text-xs font-medium transition-all text-center ${
                       experienceLevel === lvl.id
-                        ? "border-emerald-500 bg-emerald-950/50 text-emerald-300"
-                        : "border-slate-800 bg-slate-950/60 text-slate-400 hover:text-white"
+                        ? "border-slate-900 bg-slate-900 text-white shadow-xs"
+                        : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
                     }`}
                   >
                     {lvl.label}
@@ -207,8 +213,8 @@ export function GuidedBuilderDialog({ triggerText = "Sihirli Hızlı CV Oluştur
             </div>
 
             <div className="space-y-2">
-              <Label className="text-xs font-medium text-slate-300 flex items-center gap-1.5">
-                <Code2 className="h-3.5 w-3.5 text-purple-400" /> 3. ATS Şablon Yapısı
+              <Label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                <Code2 className="h-3.5 w-3.5 text-indigo-600" /> 3. ATS Şablon Yapısı
               </Label>
               <div className="grid grid-cols-3 gap-1.5">
                 {(["classic", "modern", "compact"] as const).map((t) => (
@@ -216,10 +222,10 @@ export function GuidedBuilderDialog({ triggerText = "Sihirli Hızlı CV Oluştur
                     key={t}
                     type="button"
                     onClick={() => setTemplate(t)}
-                    className={`py-2 px-2 rounded-lg border text-xs font-medium uppercase transition-all text-center ${
+                    className={`py-2 px-2 rounded-xl border text-xs font-medium uppercase transition-all text-center ${
                       template === t
-                        ? "border-purple-500 bg-purple-950/50 text-purple-300"
-                        : "border-slate-800 bg-slate-950/60 text-slate-400 hover:text-white"
+                        ? "border-slate-900 bg-slate-900 text-white shadow-xs"
+                        : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
                     }`}
                   >
                     {t}
@@ -230,11 +236,11 @@ export function GuidedBuilderDialog({ triggerText = "Sihirli Hızlı CV Oluştur
           </div>
 
           {/* Step 3: Skills to Highlight */}
-          <div className="space-y-2 pt-1 border-t border-slate-800/80">
-            <Label className="text-xs font-medium text-slate-300">
+          <div className="space-y-2 pt-1 border-t border-slate-100">
+            <Label className="text-xs font-semibold text-slate-700">
               4. Öne Çıkarılacak Beceriler (Tıklayarak Seçin veya Ekleyin)
             </Label>
-            <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto p-1 rounded-lg bg-slate-950/40 border border-slate-800/60">
+            <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto p-1.5 rounded-xl bg-slate-50 border border-slate-200">
               {(SUGGESTED_SKILLS[role] || SUGGESTED_SKILLS["Full Stack Developer"]).map((sk) => {
                 const isSelected = selectedSkills.includes(sk);
                 return (
@@ -242,10 +248,10 @@ export function GuidedBuilderDialog({ triggerText = "Sihirli Hızlı CV Oluştur
                     key={sk}
                     type="button"
                     onClick={() => toggleSkill(sk)}
-                    className={`px-2.5 py-1 rounded-md text-xs font-medium flex items-center gap-1 transition-all ${
+                    className={`px-2.5 py-1 rounded-lg text-xs font-medium flex items-center gap-1 transition-all ${
                       isSelected
-                        ? "bg-indigo-600 text-white"
-                        : "bg-slate-800/70 text-slate-400 hover:text-white hover:bg-slate-800"
+                        ? "bg-slate-900 text-white"
+                        : "bg-white border border-slate-200 text-slate-600 hover:text-slate-900"
                     }`}
                   >
                     {isSelected && <Check className="h-3 w-3" />}
@@ -265,14 +271,14 @@ export function GuidedBuilderDialog({ triggerText = "Sihirli Hızlı CV Oluştur
                     handleAddCustomSkill();
                   }
                 }}
-                className="bg-slate-950 border-slate-800 text-white text-xs h-8"
+                className="bg-white border-slate-200 text-slate-900 text-xs h-9 rounded-xl flex-1"
               />
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 onClick={handleAddCustomSkill}
-                className="border-slate-700 text-xs h-8 px-3 shrink-0"
+                className="border-slate-200 text-xs h-9 px-3 shrink-0 rounded-xl"
               >
                 <Plus className="h-3.5 w-3.5 mr-1" /> Ekle
               </Button>
@@ -281,23 +287,23 @@ export function GuidedBuilderDialog({ triggerText = "Sihirli Hızlı CV Oluştur
         </div>
 
         {/* Generate Action Button */}
-        <div className="pt-2 border-t border-slate-800 flex justify-end gap-3">
+        <div className="pt-3 border-t border-slate-100 flex justify-end gap-3">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setOpen(false)}
             disabled={loading}
-            className="text-xs text-slate-400 hover:text-white"
+            className="text-xs text-slate-500 hover:text-slate-900"
           >
             İptal
           </Button>
           <Button
             onClick={handleGenerate}
             disabled={loading || !activeRole}
-            className="bg-indigo-600 hover:bg-indigo-500 text-white gap-2 text-xs shadow-lg shadow-indigo-600/30 px-5"
+            className="bg-slate-900 hover:bg-slate-800 text-white gap-2 text-xs px-5 rounded-xl shadow-xs"
           >
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
-            {loading ? "Yapay Zeka Yazıyor..." : "ATS CV'mi Oluştur & Düzenle"}
+            <span>{loading ? "Yapay Zeka Yazıyor..." : "ATS CV'mi Oluştur & Düzenle"}</span>
           </Button>
         </div>
       </DialogContent>
