@@ -12,13 +12,14 @@
 - [x] Phase 9: Git & GitHub Remote Synchronization (https://github.com/Ilg11/cv.git - main branch)
 - [x] Phase 10: Complete Candidate Command Center Dashboard (1-Click Demo Seed, Bento Action Bar, Quick ATS Job Scanner, Tabbed Manager for Resumes, ATS Analyses & Recruiter Links Telemetry)
 - [x] Phase 10.5: Complete User Acceptance End-to-End Testing (26/26 Tests Passed, Real @react-pdf/renderer ATS Engine, Server Component bugfix, ESLint 0 warnings)
-- [ ] Phase 11: Stripe Billing & Payment Webhooks (Deferred per user request)
-- [ ] Phase 12: Production Vercel Deployment & Domain Connection
+- [x] Phase 11: Guided Easy CV Builder & Live LinkedIn Jobs Radar / Profile Benchmark via Apify (`curious_coder/linkedin-jobs-scraper` & `dev_fusion/linkedin-profile-scraper`)
+- [ ] Phase 12: Stripe Billing & Payment Webhooks (Deferred per user request)
+- [ ] Phase 13: Production Vercel Deployment & Domain Connection
 
 ## Completed Services Checklist
 - **Supabase**: Active & Migrations applied (5 tables + RLS)
 - **Anthropic Claude 3.5**: Active (`ANTHROPIC_API_KEY`)
-- **Apify Scrapers**: Active (Profile, Job, PDF parser)
+- **Apify Scrapers**: Active (Profile: `dev_fusion/linkedin-profile-scraper`, Jobs: `curious_coder/linkedin-jobs-scraper`, PDF parser)
 - **21st.dev Magic MCP**: Configured (`mcp_config.json`) & Design System implemented
 - **Resend**: Active & Verified (`re_awm...` -> Test email successfully delivered)
 - **GitHub**: Committed & Pushed to `https://github.com/Ilg11/cv.git` (main)
