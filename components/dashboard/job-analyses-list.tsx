@@ -23,7 +23,7 @@ export function JobAnalysesList({ analyses }: { analyses: any[] }) {
         </div>
         <h3 className="font-semibold text-white text-base">Henüz ATS İş Analizi Yapılmadı</h3>
         <p className="text-xs text-slate-400 max-w-sm mx-auto mt-1 mb-4">
-          Yukarıdaki Hızlı ATS İlan Tarayıcısına veya bir CV'nin "Optimize Et" butonuna tıklayarak hedef iş ilanınızı analiz edin.
+          Yukarıdaki Hızlı ATS İlan Tarayıcısına veya bir CV&apos;nin &quot;Optimize Et&quot; butonuna tıklayarak hedef iş ilanınızı analiz edin.
         </p>
       </div>
     );

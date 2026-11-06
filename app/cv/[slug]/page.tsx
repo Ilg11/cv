@@ -104,12 +104,9 @@ export default async function PublicCvPage({ params }: PageProps) {
               </span>
             )}
           </div>
-          <button
-            onClick={() => {}}
-            className="text-xs text-primary font-medium hover:underline print:hidden"
-          >
+          <span className="text-xs text-indigo-600 font-medium px-2.5 py-1 rounded-full bg-indigo-50 border border-indigo-100 print:hidden">
             ATS-Readable Format
-          </button>
+          </span>
         </div>
       </header>
 

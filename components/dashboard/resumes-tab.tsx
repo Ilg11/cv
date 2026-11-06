@@ -245,7 +245,7 @@ export function ResumesTab({ resumes }: { resumes: any[] }) {
             {search ? "Aramaya uygun özgeçmiş bulunamadı" : "Henüz hiçbir özgeçmiş oluşturulmadı"}
           </h3>
           <p className="text-xs text-slate-400 max-w-sm mx-auto mt-1 mb-4">
-            Yukarıdaki Hızlı Eylem Merkezi'nden "Örnek ATS CV Yükle"ye tıklayarak hemen hazır bir CV deneyebilir veya yeni bir tane oluşturabilirsiniz.
+            Yukarıdaki Hızlı Eylem Merkezi&apos;nden &quot;Örnek ATS CV Yükle&quot;ye tıklayarak hemen hazır bir CV deneyebilir veya yeni bir tane oluşturabilirsiniz.
           </p>
         </div>
       )}

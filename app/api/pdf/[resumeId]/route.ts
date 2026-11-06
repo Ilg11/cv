@@ -1,5 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { hasActiveAccess } from "@/lib/access";
+import { generateResumePdfBuffer } from "@/lib/resume/pdf-document";
+import { ResumeContent } from "@/lib/resume/schema";
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
@@ -52,12 +54,22 @@ export async function GET(
     kind: "pdf_export",
   });
 
-  // Return HTML print stream or attachment headers
-  return new NextResponse(JSON.stringify({ success: true, resume }), {
-    status: 200,
-    headers: {
-      "Content-Type": "application/json",
-      "Content-Disposition": `attachment; filename="${sanitizedName}-ATS-Resume.json"`,
-    },
-  });
+  try {
+    const pdfBuffer = await generateResumePdfBuffer(resume.content as ResumeContent, resume.title);
+
+    return new NextResponse(pdfBuffer as any, {
+      status: 200,
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename="${sanitizedName}-ATS-Resume.pdf"`,
+        "Content-Length": pdfBuffer.byteLength.toString(),
+      },
+    });
+  } catch (pdfErr: any) {
+    console.error("PDF generation error:", pdfErr);
+    return NextResponse.json(
+      { error: "Failed to generate PDF resume: " + pdfErr.message },
+      { status: 500 }
+    );
+  }
 }

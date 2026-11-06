@@ -1,5 +1,12 @@
 # Decisions Log
 
+### 2026-11-06: End-to-End User Acceptance Testing & Native ATS PDF Engine
+- **ATS-Proof PDF Generation**: Implemented native, machine-readable binary PDF generator via `@react-pdf/renderer` in `lib/resume/pdf-document.tsx` replacing mockup JSON responses. Uses standard Helvetica typography, single-column flow, and strict ATS margins.
+- **Server Component Error Fix**: Resolved client event handler (`onClick`) issue on `/cv/[slug]` public recruiter page to eliminate Next.js 500 runtime errors.
+- **AI Fault Tolerance & Graceful Fallback**: Added resilience to Claude 3.5 Haiku endpoints (`/api/optimize` and `/api/ai/enhance-bullet`) with algorithmic ATS keyword scoring and Google XYZ bullet rewriter fallbacks when third-party credits or API access are interrupted.
+- **CRUD Endpoints Completeness**: Implemented missing `GET /api/resumes` and `GET /api/links` endpoints to allow standard REST retrieval.
+- **Acceptance Test Suite**: Created automated test suite (`scripts/user-acceptance-test.mjs`) covering all 26 brief requirements with 100% pass rate.
+
 ### 2026-11-03: Resend Email Integration & GitHub Repository Sync
 - **Email Service**: Configured Resend via `lib/server/email.ts` using API key `re_awm...`. Successfully verified with live test dispatch to `hancerilgin@gmail.com`.
 - **Email Types**: Implemented Welcome email, Trial Ending reminder (2-day notice), and Link Paused notice.

@@ -15,7 +15,10 @@ export async function POST(request: Request) {
   }
 
   try {
-    let { resumeId, jobDescription, jobUrl } = await request.json();
+    const body = await request.json();
+    const resumeId = body.resumeId || body.resume_id;
+    let jobDescription = body.jobDescription || body.jobPostingText || body.job_description || body.job_posting_text;
+    const jobUrl = body.jobUrl || body.job_url;
 
     if (!resumeId) {
       return NextResponse.json({ error: "Resume ID is required" }, { status: 400 });

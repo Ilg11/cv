@@ -77,7 +77,7 @@ export async function POST() {
       },
     });
 
-    return NextResponse.json({ success: true, id: resume.id });
+    return NextResponse.json({ success: true, id: resume.id, resume, slug });
   } catch (err: any) {
     console.error("Demo creation error:", err);
     return NextResponse.json(

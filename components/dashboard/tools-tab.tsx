@@ -99,7 +99,7 @@ export function ToolsTab({ userEmail }: { userEmail: string }) {
           <div className="space-y-2 text-xs text-slate-300">
             <div className="p-2.5 rounded-lg bg-slate-950/60 border border-slate-800/80">
               <span className="font-semibold text-indigo-400 block mb-0.5">1. Google XYZ Formülü</span>
-              Maddeler: "[X] hedefini [Y] ile ölçülebilir şekilde [Z] yaparak başardım" formatında yazılır.
+              Maddeler: &quot;[X] hedefini [Y] ile ölçülebilir şekilde [Z] yaparak başardım&quot; formatında yazılır.
             </div>
             <div className="p-2.5 rounded-lg bg-slate-950/60 border border-slate-800/80">
               <span className="font-semibold text-emerald-400 block mb-0.5">2. Tablosuz & Sütunsuz Temiz Yapı</span>

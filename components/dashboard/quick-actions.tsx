@@ -203,7 +203,7 @@ export function QuickActions({
               LinkedIn İçe Aktar
             </h3>
             <p className="text-[11px] text-slate-400 mt-1">
-              Genel LinkedIn profil URL'nizi yapıştırarak tüm kariyer geçmişinizi tek tıkla çekin.
+              Genel LinkedIn profil URL&apos;nizi yapıştırarak tüm kariyer geçmişinizi tek tıkla çekin.
             </p>
           </div>
           <div className="flex items-center gap-1.5 text-xs text-blue-400 font-medium pt-2 border-t border-slate-800/80">

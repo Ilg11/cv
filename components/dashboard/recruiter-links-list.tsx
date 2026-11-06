@@ -278,7 +278,7 @@ export function RecruiterLinksList({
           </div>
           <h3 className="font-semibold text-white text-base">Henüz İşe Alımcı Bağlantısı Oluşturulmadı</h3>
           <p className="text-xs text-slate-400 max-w-sm mx-auto mt-1 mb-4">
-            CV'nizi şirketlere özel güvenli web bağlantısı olarak gönderin. İşe alımcılar tıkladıkça görüntüleme sayısını anlık takip edin.
+            CV&apos;nizi şirketlere özel güvenli web bağlantısı olarak gönderin. İşe alımcılar tıkladıkça görüntüleme sayısını anlık takip edin.
           </p>
           <Button
             size="sm"

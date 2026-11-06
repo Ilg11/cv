@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { hasActiveAccess } from "@/lib/access";
 import { NextResponse } from "next/server";
 
 export async function GET() {
@@ -20,5 +21,6 @@ export async function GET() {
   return NextResponse.json({
     user,
     profile,
+    hasActiveAccess: hasActiveAccess(profile),
   });
 }
